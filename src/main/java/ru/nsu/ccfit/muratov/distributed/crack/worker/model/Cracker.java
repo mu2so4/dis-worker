@@ -9,7 +9,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 import static org.paukov.combinatorics.CombinatoricsFactory.createPermutationWithRepetitionGenerator;
 
@@ -18,14 +17,9 @@ public class Cracker {
 
     private final MessageDigest digest;
 
-    public Cracker(List<String> alphabet) {
+    public Cracker(String hashMethod, List<String> alphabet) throws NoSuchAlgorithmException {
         this.alphabet = CombinatoricsFactory.createVector(alphabet);
-        try {
-            digest = MessageDigest.getInstance("MD5");
-        }
-        catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        digest = MessageDigest.getInstance(hashMethod);
     }
 
     public List<String> crack(String hash, int maxLength) {
@@ -53,24 +47,5 @@ public class Cracker {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
-    }
-
-    public static void main(String[] args) {
-        List<String> list = new ArrayList<>();
-        for(char symbol = 'a'; symbol <= 'z'; symbol++) {
-            list.add(String.valueOf(symbol));
-        }
-        for(char symbol = '0'; symbol <= '9'; symbol++) {
-            list.add(String.valueOf(symbol));
-        }
-
-        Cracker cracker = new Cracker(list);
-        Scanner scanner = new Scanner(System.in);
-        String hash = scanner.nextLine();
-        int maxLength = scanner.nextInt();
-        List<String> result = cracker.crack(hash, maxLength);
-        for(String sub: result) {
-            System.out.println(sub);
-        }
     }
 }
