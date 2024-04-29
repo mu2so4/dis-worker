@@ -1,9 +1,11 @@
 package ru.nsu.ccfit.muratov.distributed.crack.worker.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class ResponseDto {
-    String requestId;
-    String[] words;
+    private String requestId;
+    private String[] data;
 }
