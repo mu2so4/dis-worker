@@ -37,7 +37,7 @@ public class InternalController {
     }
 
     private void sendTaskResponse(ResponseDto dto) {
-        String uriTemplate = "http://localhost:8080/internal/api/manager/hash/crack/request";
+        String uriTemplate = "http://manager:8080/internal/api/manager/hash/crack/request";
         RestTemplate restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
 
         HttpEntity<ResponseDto> request = new HttpEntity<>(dto);
