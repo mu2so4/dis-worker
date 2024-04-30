@@ -1,6 +1,5 @@
 package ru.nsu.ccfit.muratov.distributed.crack.worker.service;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
