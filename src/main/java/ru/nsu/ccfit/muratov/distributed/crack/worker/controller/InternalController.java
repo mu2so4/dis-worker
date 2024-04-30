@@ -1,9 +1,9 @@
 package ru.nsu.ccfit.muratov.distributed.crack.worker.controller;
 
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,14 +24,14 @@ public class InternalController {
 
     private static final Logger logger = Logger.getLogger(InternalController.class.getCanonicalName());
 
-    private final WebClient client = WebClient.create("http://manager:8080/internal/api/manager/hash/crack/request");
+    private final WebClient client = WebClient.create("http://localhost:8080/internal/api/manager/hash/crack/request");
 
     ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     @Value("${crack.limit}")
-    private long timeLimit = 30000;
+    private long timeLimit;
 
-    @PostMapping(value = "/task", consumes = "application/json", produces = "application/json")
+    @RabbitListener(queues = "${rabbitmq.queue.name}")
     public void completeTask(@RequestBody RequestDto request) {
         logger.info(() -> "received request " + request.getRequestId());
 
