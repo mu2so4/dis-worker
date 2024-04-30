@@ -15,34 +15,64 @@ import java.util.logging.Logger;
 public class RabbitConfiguration {
     private static final Logger logger = Logger.getLogger(RabbitConfiguration.class.getCanonicalName());
 
-    @Value("${rabbitmq.queue.name}")
-    private String jsonQueue;
+    @Value("${rabbitmq.request.queue.name}")
+    private String requestQueue;
 
-    @Value("${rabbitmq.exchange.name}")
-    private String exchange;
+    @Value("${rabbitmq.request.exchange.name}")
+    private String requestExchange;
 
-    @Value("${rabbitmq.routing.key}")
-    private String routingJsonKey;
+    @Value("${rabbitmq.request.routing.key}")
+    private String requestRoutingJsonKey;
 
     // spring bean for queue (store json messages)
     @Bean
-    public Queue jsonQueue() {
-        return new Queue(jsonQueue);
+    public Queue requestQueue() {
+        return new Queue(requestQueue);
     }
 
     // spring bean for rabbitmq exchange
     @Bean
-    public TopicExchange exchange() {
-        return new TopicExchange(exchange);
+    public TopicExchange requestExchange() {
+        return new TopicExchange(requestExchange);
     }
 
     // binding between json queue and exchange using routing key
     @Bean
-    public Binding jsonBinding() {
+    public Binding requestBinding() {
         return BindingBuilder
-                .bind(jsonQueue())
-                .to(exchange())
-                .with(routingJsonKey);
+                .bind(requestQueue())
+                .to(requestExchange())
+                .with(requestRoutingJsonKey);
+    }
+
+    @Value("${rabbitmq.response.queue.name}")
+    private String responseQueue;
+
+    @Value("${rabbitmq.response.exchange.name}")
+    private String responseExchange;
+
+    @Value("${rabbitmq.response.routing.key}")
+    private String responseRoutingJsonKey;
+
+    // spring bean for queue (store json messages)
+    @Bean
+    public Queue responseQueue() {
+        return new Queue(responseQueue);
+    }
+
+    // spring bean for rabbitmq exchange
+    @Bean
+    public TopicExchange responseExchange() {
+        return new TopicExchange(responseExchange);
+    }
+
+    // binding between json queue and exchange using routing key
+    @Bean
+    public Binding responseBinding() {
+        return BindingBuilder
+                .bind(responseQueue())
+                .to(responseExchange())
+                .with(responseRoutingJsonKey);
     }
 
     @Bean

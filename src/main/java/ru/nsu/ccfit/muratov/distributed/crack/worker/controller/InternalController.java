@@ -1,13 +1,11 @@
 package ru.nsu.ccfit.muratov.distributed.crack.worker.controller;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.reactive.function.client.WebClient;
 import ru.nsu.ccfit.muratov.distributed.crack.worker.dto.RequestDto;
 import ru.nsu.ccfit.muratov.distributed.crack.worker.dto.ResponseDto;
 import ru.nsu.ccfit.muratov.distributed.crack.worker.service.CrackService;
@@ -16,22 +14,27 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
-@RestController
-@RequestMapping(value = "/internal/api/worker/hash/crack")
+@Service
 public class InternalController {
     @Autowired
     private CrackService service;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
 
     private static final Logger logger = Logger.getLogger(InternalController.class.getCanonicalName());
-
-    private final WebClient client = WebClient.create("http://localhost:8080/internal/api/manager/hash/crack/request");
 
     ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     @Value("${crack.limit}")
     private long timeLimit;
 
-    @RabbitListener(queues = "${rabbitmq.queue.name}")
+    @Value("${rabbitmq.response.routing.key}")
+    private String routingJsonKey;
+    @Value("${rabbitmq.response.exchange.name}")
+    private String exchange;
+
+    @RabbitListener(queues = "${rabbitmq.request.queue.name}")
     public void completeTask(@RequestBody RequestDto request) {
         logger.info(() -> "received request " + request.getRequestId());
 
@@ -56,12 +59,6 @@ public class InternalController {
     }
 
     private void sendTaskResponse(ResponseDto dto) {
-        client
-                .patch()
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(dto)
-                .retrieve()
-                .bodyToMono(Void.class)
-                .subscribe();
+        rabbitTemplate.convertAndSend(exchange, routingJsonKey, dto);
     }
 }
