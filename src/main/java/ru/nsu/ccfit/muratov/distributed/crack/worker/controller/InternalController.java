@@ -36,21 +36,22 @@ public class InternalController {
         logger.info(() -> "received request " + request.getRequestId());
 
         CompletableFuture<List<String>> crackFuture = CompletableFuture
-            .supplyAsync(() -> service.crack(request.getHash(), request.getMaxLength()));
+            .supplyAsync(() -> service.crack(request.getHash(), request.getMaxLength()))
+            .completeOnTimeout(null, timeLimit, TimeUnit.MILLISECONDS)
+            .thenApply((result) -> {
+                String[] arrResult;
+                if(result != null) {
+                    arrResult = new String[result.size()];
+                    result.toArray(arrResult);
+                }
+                else {
+                    arrResult = null;
+                }
 
-        Runnable cancelTask = () -> crackFuture.cancel(true);
-        executorService.schedule(cancelTask, timeLimit, TimeUnit.MILLISECONDS);
-
-        //create sending response task
-        crackFuture.thenApply((result) -> {
-            System.out.println("ended");
-            String[] arrResult = new String[result.size()];
-            result.toArray(arrResult);
-
-            ResponseDto response = new ResponseDto(request.getRequestId(), arrResult);
-            sendTaskResponse(response);
-            return null;
-        });
+                ResponseDto response = new ResponseDto(request.getRequestId(), arrResult);
+                sendTaskResponse(response);
+                return null;
+            });
 
     }
 

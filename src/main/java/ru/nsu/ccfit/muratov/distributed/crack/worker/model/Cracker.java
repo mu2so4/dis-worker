@@ -23,22 +23,16 @@ public class Cracker {
     }
 
     public List<String> crack(String hash, int maxLength) {
-        System.out.println("started");
         hash = hash.toLowerCase();
         List<String> result = new ArrayList<>();
 
-        Thread currentThread = Thread.currentThread();
-        crack:
-        for(int length = 1; length <= maxLength; length++) {
+        for (int length = 1; length <= maxLength; length++) {
             Generator<String> generator = createPermutationWithRepetitionGenerator(alphabet, length);
-            for (ICombinatoricsVector<String> permutation: generator) {
-                if(currentThread.isInterrupted()) {
-                    break crack;
-                }
+            for (ICombinatoricsVector<String> permutation : generator) {
                 String probe = String.join("", permutation.getVector());
                 byte[] probeHashBytes = digest.digest(probe.getBytes(StandardCharsets.UTF_8));
                 String probeHash = bytesToHex(probeHashBytes);
-                if(probeHash.equals(hash)) {
+                if (probeHash.equals(hash)) {
                     result.add(probe);
                 }
             }
