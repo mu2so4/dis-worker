@@ -10,7 +10,9 @@ import ru.nsu.ccfit.muratov.distributed.crack.worker.dto.ResponseDto;
 import ru.nsu.ccfit.muratov.distributed.crack.worker.service.CrackService;
 import ru.nsu.ccfit.muratov.distributed.crack.worker.service.Sender;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
@@ -27,9 +29,18 @@ public class InternalController {
     @Value("${crack.limit}")
     private long timeLimit;
 
+    private final Queue<String> latestRequests = new LinkedList<>();
+
+    private static final int MAX_SIZE = 5;
+
     @RabbitListener(queues = "${rabbitmq.request.queue.name}")
     public void completeTask(@Payload RequestDto request) {
-        logger.info(() -> "received request " + request.getRequestId());
+        String requestId = request.getRequestId();
+        if(latestRequests.contains(requestId)) {
+            logger.info("received again request " + requestId + ". Skipping");
+            return;
+        }
+        logger.info(() -> "received request " + requestId);
 
         CompletableFuture<List<String>> crackFuture = CompletableFuture
             .supplyAsync(() -> service.crack(request.getHash(), request.getMaxLength()))
@@ -44,11 +55,16 @@ public class InternalController {
                     arrResult = null;
                 }
 
-                ResponseDto response = new ResponseDto(request.getRequestId(), arrResult);
+                latestRequests.add(requestId);
+                if(latestRequests.size() > MAX_SIZE) {
+                    latestRequests.remove();
+                }
+                ResponseDto response = new ResponseDto(requestId, arrResult);
                 sendTaskResponse(response);
                 return null;
             });
 
+        crackFuture.join();
     }
 
     private void sendTaskResponse(ResponseDto dto) {
