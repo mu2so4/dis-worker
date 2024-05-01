@@ -1,14 +1,14 @@
 package ru.nsu.ccfit.muratov.distributed.crack.worker.controller;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import ru.nsu.ccfit.muratov.distributed.crack.worker.dto.RequestDto;
 import ru.nsu.ccfit.muratov.distributed.crack.worker.dto.ResponseDto;
 import ru.nsu.ccfit.muratov.distributed.crack.worker.service.CrackService;
+import ru.nsu.ccfit.muratov.distributed.crack.worker.service.Sender;
 
 import java.util.List;
 import java.util.concurrent.*;
@@ -18,24 +18,17 @@ import java.util.logging.Logger;
 public class InternalController {
     @Autowired
     private CrackService service;
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    private Sender<ResponseDto> sender;
 
     private static final Logger logger = Logger.getLogger(InternalController.class.getCanonicalName());
-
-    ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     @Value("${crack.limit}")
     private long timeLimit;
 
-    @Value("${rabbitmq.response.routing.key}")
-    private String routingJsonKey;
-    @Value("${rabbitmq.response.exchange.name}")
-    private String exchange;
-
     @RabbitListener(queues = "${rabbitmq.request.queue.name}")
-    public void completeTask(@RequestBody RequestDto request) {
+    public void completeTask(@Payload RequestDto request) {
         logger.info(() -> "received request " + request.getRequestId());
 
         CompletableFuture<List<String>> crackFuture = CompletableFuture
@@ -59,6 +52,6 @@ public class InternalController {
     }
 
     private void sendTaskResponse(ResponseDto dto) {
-        rabbitTemplate.convertAndSend(exchange, routingJsonKey, dto);
+        sender.sendMessage(dto);
     }
 }
